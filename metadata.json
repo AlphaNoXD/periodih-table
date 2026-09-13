@@ -1,6 +1,6 @@
 {
   "name": "Neon Elements",
-  "description": "Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, and category filters.",
+  "description": "Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, category filters, and an interactive Fill-in-the-Blanks Practice Mode study tool.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

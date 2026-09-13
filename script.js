@@ -1613,7 +1613,862 @@ function init() {
       if (cat) setCategoryFilter(cat);
     });
   });
+
+  // 13. Initialize Practice Mode & Navigation
+  initPracticeMode();
 }
+
+// ==========================================================================
+// PRACTICE MODE MODULE (Fill-in-the-Blanks Interactive Study Reviewer)
+// ==========================================================================
+
+const practiceState = {
+  currentView: "explore", // "explore" or "practice"
+  practiceType: localStorage.getItem("neon_practice_type") || "mixed",
+  questionCount: localStorage.getItem("neon_practice_count") || "10",
+  questions: [],          // Array of { element, field, expected, hint }
+  answers: {},            // Map of el.num -> { isCorrect: bool, userAnswer: str, expected: str, field: str, checked: bool }
+  mistakeElements: []     // Array of element objects answered incorrectly
+};
+
+// Curated educational hints for chemical elements (never directly revealing the answer)
+const ELEMENT_HINTS = {
+  1: {
+    name: "Lightest, most abundant gas in the cosmos; burns cleanly to produce water.",
+    sym: "Single letter, initial of the Greek term meaning 'water-former'.",
+    num: "Contains exactly 1 proton in its nucleus.",
+    mass: "Standard weight is approximately 1.008 u."
+  },
+  2: {
+    name: "Inert noble gas named for Helios, the ancient Greek sun god.",
+    sym: "Two letters: H followed by e.",
+    num: "Atomic number 2, located at the upper-right corner of Period 1.",
+    mass: "Standard atomic weight is approximately 4.00 u."
+  },
+  3: {
+    name: "Lightest solid alkali metal, essential for modern rechargeable battery tech.",
+    sym: "First two letters of its chemical name.",
+    num: "First element of Period 2 with 3 protons.",
+    mass: "Standard atomic weight is around 6.94 u."
+  },
+  6: {
+    name: "The fundamental backbone element of all organic life, graphite, and diamonds.",
+    sym: "Single letter C.",
+    num: "Atomic number 6, forming 4 covalent bonds.",
+    mass: "Standard atomic weight is approximately 12.011 u."
+  },
+  7: {
+    name: "Colorless diatomic gas constituting about 78% of Earth's atmosphere.",
+    sym: "Single letter N.",
+    num: "Atomic number 7, sitting between Carbon and Oxygen.",
+    mass: "Standard atomic weight is around 14.007 u."
+  },
+  8: {
+    name: "Critical for cellular respiration, making up ~21% of our atmosphere and 50% of Earth's crust by mass.",
+    sym: "Single capital letter O.",
+    num: "Has 8 protons in its nucleus.",
+    mass: "Standard atomic weight is approximately 15.999 u."
+  },
+  11: {
+    name: "Soft alkali metal that combines with chlorine to form table salt.",
+    sym: "Derived from its Neo-Latin name 'Natrium'.",
+    num: "Atomic number 11, the alkali metal of Period 3.",
+    mass: "Standard atomic weight is approximately 22.99 u."
+  },
+  12: {
+    name: "Alkaline earth metal at the core of the chlorophyll molecule in plants.",
+    sym: "Two letters: M followed by g.",
+    num: "Atomic number 12 in Group 2.",
+    mass: "Standard atomic weight is around 24.31 u."
+  },
+  13: {
+    name: "Most abundant metallic element in Earth's crust, lightweight and corrosion-resistant.",
+    sym: "First two letters of its common name.",
+    num: "Atomic number 13, located in Group 13.",
+    mass: "Standard atomic weight is approximately 26.98 u."
+  },
+  14: {
+    name: "Semiconductor metalloid powering the microelectronics and computer industries.",
+    sym: "Two letters: S followed by i.",
+    num: "Atomic number 14, located directly beneath Carbon.",
+    mass: "Standard atomic weight is around 28.09 u."
+  },
+  17: {
+    name: "Yellow-green halogen gas used extensively as a swimming pool disinfectant.",
+    sym: "Two letters: C followed by l.",
+    num: "Atomic number 17 in Group 17.",
+    mass: "Standard atomic weight is approximately 35.45 u."
+  },
+  19: {
+    name: "Vital dietary electrolyte found in bananas and potatoes, vital for heart signaling.",
+    sym: "Derived from the Latin/Neo-Latin name 'Kalium'.",
+    num: "Atomic number 19, opening Period 4.",
+    mass: "Standard atomic weight is approximately 39.10 u."
+  },
+  20: {
+    name: "Alkaline earth metal essential for bone density, teeth enamel, and limestone.",
+    sym: "Two letters: C followed by a.",
+    num: "Atomic number 20.",
+    mass: "Standard atomic weight is approximately 40.08 u."
+  },
+  26: {
+    name: "The most abundant transition metal on Earth by mass, core to hemoglobin and steel.",
+    sym: "Derived from its classical Latin name 'ferrum'.",
+    num: "Atomic number 26 in Group 8.",
+    mass: "Standard atomic weight is approximately 55.85 u."
+  },
+  29: {
+    name: "Reddish-orange transition metal with high electrical conductivity, known since antiquity.",
+    sym: "Derived from the Latin name 'cuprum' (named after Cyprus).",
+    num: "Atomic number 29 in Group 11.",
+    mass: "Standard atomic weight is approximately 63.55 u."
+  },
+  30: {
+    name: "Transition metal used extensively in brass alloys and galvanizing steel against rust.",
+    sym: "Two letters: Z followed by n.",
+    num: "Atomic number 30.",
+    mass: "Standard atomic weight is approximately 65.38 u."
+  },
+  47: {
+    name: "Precious lustrous transition metal possessing the highest electrical conductivity of any element.",
+    sym: "Derived from its Latin name 'argentum'.",
+    num: "Atomic number 47 in Group 11.",
+    mass: "Standard atomic weight is approximately 107.87 u."
+  },
+  50: {
+    name: "Silvery malleable post-transition metal alloyed with copper since antiquity to produce bronze.",
+    sym: "Derived from its Latin name 'stannum'.",
+    num: "Atomic number 50.",
+    mass: "Standard atomic weight is around 118.71 u."
+  },
+  74: {
+    name: "Transition metal boasting the highest melting point (3422 °C) of all metals.",
+    sym: "Derived from its German mineral name 'Wolfram'.",
+    num: "Atomic number 74 in Group 6.",
+    mass: "Standard atomic weight is around 183.84 u."
+  },
+  79: {
+    name: "Precious unreactive yellow metal revered throughout human history for coinage and jewelry.",
+    sym: "Derived from the Latin 'aurum' meaning 'glowing dawn'.",
+    num: "Atomic number 79 in Group 11.",
+    mass: "Standard atomic weight is approximately 196.97 u."
+  },
+  80: {
+    name: "Dense transition metal known as 'quicksilver' that remains liquid at standard room temperature.",
+    sym: "Derived from the Greek/Latin 'hydrargyrum' (liquid silver).",
+    num: "Atomic number 80 in Group 12.",
+    mass: "Standard atomic weight is around 200.59 u."
+  },
+  82: {
+    name: "Heavy, soft, ductile post-transition metal used historically in plumbing and radiation shielding.",
+    sym: "Derived from its Latin name 'plumbum'.",
+    num: "Atomic number 82.",
+    mass: "Standard atomic weight is approximately 207.2 u."
+  },
+  92: {
+    name: "Dense, radioactive actinide used as primary fuel in nuclear fission power reactors.",
+    sym: "Single letter U.",
+    num: "Atomic number 92, highest naturally occurring element in significant quantity.",
+    mass: "Standard atomic weight is approximately 238.03 u."
+  }
+};
+
+/**
+ * Return an educational hint tailored to the element and tested field
+ * without ever giving away the actual answer directly.
+ */
+function getElementHint(el, field) {
+  if (ELEMENT_HINTS[el.num] && ELEMENT_HINTS[el.num][field]) {
+    return ELEMENT_HINTS[el.num][field];
+  }
+
+  if (field === "name") {
+    // Scrub direct mention of name or symbol
+    let safeDesc = (el.desc || "")
+      .replace(new RegExp(el.name, "gi"), "this element")
+      .replace(new RegExp(`\\b${el.sym}\\b`, "g"), "X");
+    return `${safeDesc} Discovered in ${el.disc} by ${el.by}.`;
+  } else if (field === "sym") {
+    if (el.sym.length === 1) {
+      return `Single-letter symbol starting with "${el.sym[0]}".`;
+    }
+    return `Two-letter symbol starting with "${el.sym[0]}".`;
+  } else if (field === "num") {
+    return `Period ${el.p} element with ${el.num} protons. Positioned between Z=${el.num - 1} and Z=${el.num + 1}.`;
+  } else if (field === "mass") {
+    const approx = Math.round(parseFloat(el.mass));
+    return `Standard atomic weight is roughly ${approx} u.`;
+  }
+  return `A recognized chemical element in Period ${el.p}.`;
+}
+
+/**
+ * Validates user input with tolerant formatting
+ */
+function validateAnswer(userVal, expected, field) {
+  if (!userVal) return false;
+  const normUser = userVal.toString().trim().toLowerCase();
+  const normExpected = (expected || "").toString().trim().toLowerCase();
+
+  if (!normUser) return false;
+
+  if (field === "name") {
+    return normUser.replace(/\s+/g, " ") === normExpected.replace(/\s+/g, " ");
+  }
+
+  if (field === "sym") {
+    return normUser === normExpected;
+  }
+
+  if (field === "num") {
+    const userInt = parseInt(normUser, 10);
+    const expInt = parseInt(normExpected, 10);
+    return !isNaN(userInt) && userInt === expInt;
+  }
+
+  if (field === "mass") {
+    // Strip trailing 'u' or spaces
+    const cleanUser = normUser.replace(/u$/, "").trim();
+    const cleanExp = normExpected.replace(/u$/, "").trim();
+    if (cleanUser === cleanExp) return true;
+
+    const userNum = parseFloat(cleanUser);
+    const expNum = parseFloat(cleanExp);
+    if (!isNaN(userNum) && !isNaN(expNum)) {
+      if (Math.abs(userNum - expNum) <= 0.15) return true;
+      if (Math.round(userNum) === Math.round(expNum) && Math.abs(userNum - expNum) < 0.8) return true;
+    }
+    return false;
+  }
+
+  return normUser === normExpected;
+}
+
+/**
+ * Generate a new randomized practice question set
+ */
+function generatePracticeSet(customElementList = null) {
+  practiceState.answers = {};
+  practiceState.mistakeElements = [];
+
+  let targetElements = [];
+  if (customElementList && customElementList.length > 0) {
+    // Specific elements (e.g. Review Mistakes)
+    targetElements = [...customElementList];
+  } else {
+    // Pick unique random elements from ELEMENTS_DATA
+    const shuffled = [...ELEMENTS_DATA].sort(() => Math.random() - 0.5);
+    const requestedCount = practiceState.questionCount === "all" ? 118 : parseInt(practiceState.questionCount, 10);
+    const count = Math.min(requestedCount, 118);
+    targetElements = shuffled.slice(0, count);
+  }
+
+  const possibleFields = ["name", "sym", "num", "mass"];
+  practiceState.questions = targetElements.map(el => {
+    let field = practiceState.practiceType;
+    if (field === "mixed") {
+      field = possibleFields[Math.floor(Math.random() * possibleFields.length)];
+    }
+
+    let expected = "";
+    if (field === "name") expected = el.name;
+    else if (field === "sym") expected = el.sym;
+    else if (field === "num") expected = el.num.toString();
+    else if (field === "mass") expected = el.mass;
+
+    return {
+      element: el,
+      field: field,
+      expected: expected,
+      hint: getElementHint(el, field)
+    };
+  });
+
+  // Hide score banner
+  const scoreBanner = document.getElementById("practice-score-banner");
+  if (scoreBanner) scoreBanner.hidden = true;
+
+  renderPracticeTable();
+  updatePracticeProgressUI();
+}
+
+/**
+ * Render Practice Table matching exact periodic table geometry
+ */
+function renderPracticeTable() {
+  const grid = document.getElementById("practice-table-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  // 1. Top-Left Corner Label
+  const cornerLabel = document.createElement("div");
+  cornerLabel.className = "coord-cell corner-coord";
+  cornerLabel.innerHTML = `<span>G↓</span><span>P→</span>`;
+  grid.appendChild(cornerLabel);
+
+  // 2. Group Number Headers (1 to 18)
+  GROUP_LABELS.forEach(grpInfo => {
+    const grp = document.createElement("div");
+    grp.className = "coord-cell group-coord";
+    grp.style.gridColumn = (grpInfo.num + 1).toString();
+    grp.style.gridRow = "1";
+    grp.innerHTML = `
+      <span class="group-main-num">${grpInfo.num}</span>
+      <span class="group-iupac-sub">${grpInfo.iupac}</span>
+    `;
+    grid.appendChild(grp);
+  });
+
+  // 3. Period Number Headers (1 to 7)
+  for (let p = 1; p <= 7; p++) {
+    const per = document.createElement("div");
+    per.className = "coord-cell period-coord";
+    per.style.gridColumn = "1";
+    per.style.gridRow = (p + 1).toString();
+    per.innerHTML = `
+      <span class="period-main-num">${p}</span>
+      <span class="period-shell-sub">${PERIOD_SHELLS[p - 1]}</span>
+    `;
+    grid.appendChild(per);
+  }
+
+  // 4. Placeholders for Lanthanide (57-71) and Actinide (89-103) slots
+  const lanthPlaceholder = document.createElement("div");
+  lanthPlaceholder.className = "series-slot";
+  lanthPlaceholder.style.gridColumn = "4";
+  lanthPlaceholder.style.gridRow = "7";
+  lanthPlaceholder.innerHTML = `<span class="slot-range">57–71</span><span class="slot-name">La–Lu</span>`;
+  grid.appendChild(lanthPlaceholder);
+
+  const actPlaceholder = document.createElement("div");
+  actPlaceholder.className = "series-slot";
+  actPlaceholder.style.gridColumn = "4";
+  actPlaceholder.style.gridRow = "8";
+  actPlaceholder.innerHTML = `<span class="slot-range">89–103</span><span class="slot-name">Ac–Lr</span>`;
+  grid.appendChild(actPlaceholder);
+
+  // 5. Spacer Row with glowing divider
+  const spacer = document.createElement("div");
+  spacer.className = "series-gap-row";
+  spacer.style.gridColumn = "1 / span 19";
+  spacer.style.gridRow = "9";
+  spacer.innerHTML = `<div class="glowing-divider-line"></div>`;
+  grid.appendChild(spacer);
+
+  // 6. Series Titles
+  const lanthLabel = document.createElement("div");
+  lanthLabel.className = "series-title-cell";
+  lanthLabel.style.gridColumn = "1 / span 3";
+  lanthLabel.style.gridRow = "10";
+  lanthLabel.innerHTML = `<span>Lanthanides</span>`;
+  grid.appendChild(lanthLabel);
+
+  const actLabel = document.createElement("div");
+  actLabel.className = "series-title-cell";
+  actLabel.style.gridColumn = "1 / span 3";
+  actLabel.style.gridRow = "11";
+  actLabel.innerHTML = `<span>Actinides</span>`;
+  grid.appendChild(actLabel);
+
+  // 7. Render Elements
+  ELEMENTS_DATA.forEach(el => {
+    let col = el.g + 1;
+    let row = el.p + 1;
+    if (el.num >= 57 && el.num <= 71) {
+      row = 10;
+      col = (el.num - 57) + 4;
+    } else if (el.num >= 89 && el.num <= 103) {
+      row = 11;
+      col = (el.num - 89) + 4;
+    }
+
+    let stateDotColor = "var(--state-solid)";
+    if (el.st.toLowerCase().includes("gas")) stateDotColor = "var(--state-gas)";
+    else if (el.st.toLowerCase().includes("liquid")) stateDotColor = "var(--state-liquid)";
+    else if (el.st.toLowerCase().includes("synthetic") || el.num >= 95) stateDotColor = "var(--state-synthetic)";
+
+    const question = practiceState.questions.find(q => q.element.num === el.num);
+
+    if (!question) {
+      // Context tile (not tested in current set)
+      const contextTile = document.createElement("div");
+      contextTile.className = `element-tile practice-context-tile cat-${el.cat}`;
+      contextTile.style.gridColumn = col.toString();
+      contextTile.style.gridRow = row.toString();
+      contextTile.setAttribute("data-num", el.num.toString());
+      contextTile.title = `${el.name} (Z=${el.num})`;
+      contextTile.innerHTML = `
+        <div class="tile-head-row">
+          <span class="tile-z-num">${el.num}</span>
+          <span class="tile-state-dot" style="background: ${stateDotColor};"></span>
+        </div>
+        <div class="tile-sym-block">${el.sym}</div>
+        <div class="tile-foot-row">
+          <span class="tile-name-label">${el.name}</span>
+          <span class="tile-mass-label">${el.mass}</span>
+        </div>
+      `;
+      grid.appendChild(contextTile);
+    } else {
+      // Active practice test tile
+      const testTile = document.createElement("div");
+      testTile.className = `element-tile practice-test-tile cat-${el.cat}`;
+      testTile.id = `practice-tile-${el.num}`;
+      testTile.style.gridColumn = col.toString();
+      testTile.style.gridRow = row.toString();
+      testTile.setAttribute("data-num", el.num.toString());
+
+      // Head row: number or input + hint button
+      let headHtml = "";
+      if (question.field === "num") {
+        headHtml = `
+          <div class="test-tile-head">
+            <input type="text" class="practice-answer-input practice-input-num" id="p-input-${el.num}" data-num="${el.num}" placeholder="Z?" aria-label="Atomic number for ${el.sym}" autocomplete="off" spellcheck="false" />
+            <button type="button" class="btn-tile-hint" data-num="${el.num}" title="Hint: ${el.sym}" aria-label="Show hint">?</button>
+          </div>
+        `;
+      } else {
+        headHtml = `
+          <div class="test-tile-head">
+            <span class="tile-z-num">${el.num}</span>
+            <button type="button" class="btn-tile-hint" data-num="${el.num}" title="Hint" aria-label="Show hint">?</button>
+          </div>
+        `;
+      }
+
+      // Middle: symbol or input
+      let symHtml = "";
+      if (question.field === "sym") {
+        symHtml = `
+          <div class="test-tile-symbol-area">
+            <input type="text" class="practice-answer-input practice-input-sym" id="p-input-${el.num}" data-num="${el.num}" placeholder="Sym" aria-label="Chemical symbol for ${el.name}" autocomplete="off" spellcheck="false" />
+          </div>
+        `;
+      } else {
+        symHtml = `
+          <div class="test-tile-symbol-area">
+            <div class="tile-sym-block">${el.sym}</div>
+          </div>
+        `;
+      }
+
+      // Foot: input (for name/mass) or label (for sym/num), and full-width Check button
+      let footFields = "";
+      if (question.field === "name") {
+        footFields = `
+          <input type="text" class="practice-answer-input" id="p-input-${el.num}" data-num="${el.num}" placeholder="Name..." aria-label="Element name for ${el.sym}" autocomplete="off" spellcheck="false" />
+        `;
+      } else if (question.field === "mass") {
+        footFields = `
+          <input type="text" class="practice-answer-input" id="p-input-${el.num}" data-num="${el.num}" placeholder="Mass..." aria-label="Atomic mass for ${el.sym}" autocomplete="off" spellcheck="false" />
+        `;
+      } else {
+        footFields = `
+          <span class="tile-name-label">${el.name}</span>
+        `;
+      }
+
+      const actionsHtml = `
+        <div class="test-tile-actions-row">
+          <button type="button" class="btn-tile-check" id="p-check-btn-${el.num}" data-num="${el.num}" title="Check Answer (or press Enter)">Check</button>
+        </div>
+      `;
+
+      // Popovers (Hint popover & Solution popover)
+      const popoversHtml = `
+        <div id="p-hint-popover-${el.num}" class="tile-hint-popover" hidden>
+          <div class="hint-popover-header">
+            <span class="hint-popover-title">Educational Clue</span>
+            <button type="button" class="btn-close-hint" data-num="${el.num}" aria-label="Close hint">✕</button>
+          </div>
+          <div class="hint-popover-text">${question.hint}</div>
+        </div>
+        <div id="p-solution-${el.num}" class="tile-solution-feedback" hidden>
+          <span class="solution-badge">✕ Incorrect</span>
+          <span class="solution-expected-text">Correct answer: <strong class="solution-expected-val">${question.expected}</strong></span>
+        </div>
+      `;
+
+      testTile.innerHTML = headHtml + symHtml + `<div class="test-tile-foot">${footFields}${actionsHtml}</div>` + popoversHtml;
+      grid.appendChild(testTile);
+
+      // Attach event handlers for input, enter key, check button, and hint button
+      const inputEl = testTile.querySelector(".practice-answer-input");
+      const checkBtn = testTile.querySelector(".btn-tile-check");
+      const hintBtn = testTile.querySelector(".btn-tile-hint");
+      const closeHintBtn = testTile.querySelector(".btn-close-hint");
+
+      if (inputEl) {
+        inputEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            checkAnswer(el.num, true); // Auto-advance to next unanswered blank
+          }
+        });
+
+        // Clear error popup and reset button when user edits input
+        inputEl.addEventListener("input", () => {
+          if (checkBtn && !testTile.classList.contains("is-correct")) {
+            checkBtn.textContent = "Check";
+            checkBtn.classList.remove("btn-checked-wrong");
+            checkBtn.disabled = false;
+          }
+          const solutionPopover = document.getElementById(`p-solution-${el.num}`);
+          if (solutionPopover) solutionPopover.hidden = true;
+        });
+      }
+
+      if (checkBtn) {
+        checkBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          checkAnswer(el.num, true);
+        });
+      }
+
+      if (hintBtn) {
+        hintBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const hintPop = document.getElementById(`p-hint-popover-${el.num}`);
+          if (hintPop) {
+            hintPop.hidden = !hintPop.hidden;
+          }
+        });
+      }
+
+      if (closeHintBtn) {
+        closeHintBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const hintPop = document.getElementById(`p-hint-popover-${el.num}`);
+          if (hintPop) hintPop.hidden = true;
+        });
+      }
+    }
+  });
+
+  // Focus the first unanswered input for fast start
+  const firstInput = grid.querySelector(".practice-answer-input");
+  if (firstInput) {
+    setTimeout(() => {
+      firstInput.focus();
+    }, 150);
+  }
+}
+
+/**
+ * Check an individual answer immediately
+ */
+function checkAnswer(num, autoAdvance = false) {
+  const question = practiceState.questions.find(q => q.element.num === num);
+  if (!question) return;
+
+  const inputEl = document.getElementById(`p-input-${num}`);
+  const tileEl = document.getElementById(`practice-tile-${num}`);
+  const checkBtn = document.getElementById(`p-check-btn-${num}`);
+  const solutionPopover = document.getElementById(`p-solution-${num}`);
+  const hintPopover = document.getElementById(`p-hint-popover-${num}`);
+
+  if (!inputEl || !tileEl) return;
+
+  const userVal = inputEl.value.trim();
+  const isCorrect = validateAnswer(userVal, question.expected, question.field);
+
+  // Close hint popover if open
+  if (hintPopover) hintPopover.hidden = true;
+
+  // Record answer state
+  practiceState.answers[num] = {
+    isCorrect: isCorrect,
+    userAnswer: userVal,
+    expected: question.expected,
+    field: question.field,
+    checked: true
+  };
+
+  if (isCorrect) {
+    tileEl.classList.remove("is-incorrect");
+    tileEl.classList.add("is-correct");
+    if (checkBtn) {
+      checkBtn.textContent = "✓";
+      checkBtn.classList.add("btn-checked-correct");
+      checkBtn.classList.remove("btn-checked-wrong");
+      checkBtn.disabled = true;
+      checkBtn.title = "Correct!";
+    }
+    if (solutionPopover) solutionPopover.hidden = true;
+
+    // Remove from mistakes if previously wrong
+    practiceState.mistakeElements = practiceState.mistakeElements.filter(el => el.num !== num);
+
+    updatePracticeProgressUI();
+
+    if (autoAdvance) {
+      focusNextUnanswered(num);
+    }
+  } else {
+    tileEl.classList.remove("is-correct");
+    tileEl.classList.add("is-incorrect");
+    if (checkBtn) {
+      checkBtn.textContent = "✕ Retry";
+      checkBtn.classList.add("btn-checked-wrong");
+      checkBtn.classList.remove("btn-checked-correct");
+      checkBtn.disabled = false;
+      checkBtn.title = "Incorrect. Click to re-check or try again.";
+    }
+    if (solutionPopover) {
+      solutionPopover.hidden = false;
+      // Auto-hide solution popup after 4.5 seconds to keep view clean
+      setTimeout(() => {
+        if (solutionPopover) solutionPopover.hidden = true;
+      }, 4500);
+    }
+
+    // Add to mistakes if not already tracked
+    if (!practiceState.mistakeElements.some(el => el.num === num)) {
+      practiceState.mistakeElements.push(question.element);
+    }
+
+    updatePracticeProgressUI();
+  }
+}
+
+/**
+ * Check all unanswered questions at once
+ */
+function checkAllAnswers() {
+  practiceState.questions.forEach(q => {
+    checkAnswer(q.element.num, false);
+  });
+  updatePracticeProgressUI();
+  showToast("All answers evaluated!");
+}
+
+/**
+ * Focus next unanswered question for ultra-fast PC reviewing
+ */
+function focusNextUnanswered(currentNum) {
+  const inputs = Array.from(document.querySelectorAll(".practice-answer-input"));
+  if (inputs.length === 0) return;
+
+  const currentIndex = inputs.findIndex(inp => parseInt(inp.getAttribute("data-num"), 10) === currentNum);
+
+  // Check subsequent inputs
+  for (let i = currentIndex + 1; i < inputs.length; i++) {
+    const num = parseInt(inputs[i].getAttribute("data-num"), 10);
+    const ans = practiceState.answers[num];
+    if (!ans || !ans.isCorrect) {
+      inputs[i].focus();
+      inputs[i].select();
+      inputs[i].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      return;
+    }
+  }
+
+  // Wrap around from beginning
+  for (let i = 0; i < currentIndex; i++) {
+    const num = parseInt(inputs[i].getAttribute("data-num"), 10);
+    const ans = practiceState.answers[num];
+    if (!ans || !ans.isCorrect) {
+      inputs[i].focus();
+      inputs[i].select();
+      inputs[i].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      return;
+    }
+  }
+}
+
+/**
+ * Update live stats, progress bar, and score modal
+ */
+function updatePracticeProgressUI() {
+  const total = practiceState.questions.length;
+  if (total === 0) return;
+
+  const checkedEntries = Object.values(practiceState.answers);
+  const correctCount = checkedEntries.filter(a => a.isCorrect).length;
+  const wrongCount = checkedEntries.filter(a => !a.isCorrect).length;
+  const checkedTotal = checkedEntries.length;
+  const remainingCount = Math.max(0, total - checkedTotal);
+
+  // Update pill numbers
+  const statCorrectEl = document.getElementById("stat-correct-count");
+  const statWrongEl = document.getElementById("stat-wrong-count");
+  const statRemainingEl = document.getElementById("stat-remaining-count");
+  const progressTextEl = document.getElementById("practice-q-progress");
+  const pctBadgeEl = document.getElementById("practice-pct-badge");
+  const progressBarEl = document.getElementById("practice-progress-bar");
+
+  if (statCorrectEl) statCorrectEl.textContent = correctCount.toString();
+  if (statWrongEl) statWrongEl.textContent = wrongCount.toString();
+  if (statRemainingEl) statRemainingEl.textContent = remainingCount.toString();
+
+  const pct = Math.round((checkedTotal / total) * 100);
+  if (progressTextEl) progressTextEl.textContent = `Question ${checkedTotal} / ${total}`;
+  if (pctBadgeEl) pctBadgeEl.textContent = `${pct}% Checked`;
+  if (progressBarEl) progressBarEl.style.width = `${pct}%`;
+
+  // Score completion check
+  const scoreBanner = document.getElementById("practice-score-banner");
+  if (checkedTotal === total && total > 0) {
+    if (scoreBanner) {
+      scoreBanner.hidden = false;
+      const scoreDigits = document.getElementById("final-score-points");
+      const scorePct = document.getElementById("final-score-pct");
+      const scoreMsg = document.getElementById("final-score-message");
+
+      const finalPct = Math.round((correctCount / total) * 100);
+      if (scoreDigits) scoreDigits.textContent = `${correctCount} / ${total}`;
+      if (scorePct) scorePct.textContent = `${finalPct}%`;
+
+      let message = "Let's review those elements!";
+      if (finalPct >= 90) {
+        message = "Excellent! 🔥";
+      } else if (finalPct >= 70) {
+        message = "Nice work!";
+      } else if (finalPct >= 50) {
+        message = "Keep practicing!";
+      }
+
+      if (scoreMsg) scoreMsg.textContent = message;
+    }
+  } else if (scoreBanner) {
+    scoreBanner.hidden = true;
+  }
+}
+
+/**
+ * Switch between "Periodic Table" and "Practice Mode" views
+ */
+function switchView(viewName) {
+  const navBtnExplore = document.getElementById("nav-btn-explore");
+  const navBtnPractice = document.getElementById("nav-btn-practice");
+  const subNavBar = document.querySelector(".sub-nav-bar");
+  const scienceWorkspace = document.querySelector(".science-workspace");
+  const practiceWorkspace = document.getElementById("practice-workspace");
+
+  if (viewName === "practice") {
+    practiceState.currentView = "practice";
+    if (navBtnPractice) {
+      navBtnPractice.classList.add("active");
+      navBtnPractice.setAttribute("aria-selected", "true");
+    }
+    if (navBtnExplore) {
+      navBtnExplore.classList.remove("active");
+      navBtnExplore.setAttribute("aria-selected", "false");
+    }
+
+    if (subNavBar) subNavBar.style.display = "none";
+    if (scienceWorkspace) scienceWorkspace.style.display = "none";
+    if (practiceWorkspace) practiceWorkspace.hidden = false;
+
+    // If no questions exist yet, generate initial practice set
+    if (practiceState.questions.length === 0) {
+      generatePracticeSet();
+    }
+  } else {
+    practiceState.currentView = "explore";
+    if (navBtnExplore) {
+      navBtnExplore.classList.add("active");
+      navBtnExplore.setAttribute("aria-selected", "true");
+    }
+    if (navBtnPractice) {
+      navBtnPractice.classList.remove("active");
+      navBtnPractice.setAttribute("aria-selected", "false");
+    }
+
+    if (subNavBar) subNavBar.style.display = "";
+    if (scienceWorkspace) scienceWorkspace.style.display = "";
+    if (practiceWorkspace) practiceWorkspace.hidden = true;
+  }
+}
+
+/**
+ * Initialize Practice Mode Event Listeners & State
+ */
+function initPracticeMode() {
+  const navBtnExplore = document.getElementById("nav-btn-explore");
+  const navBtnPractice = document.getElementById("nav-btn-practice");
+  const practiceTypeSelect = document.getElementById("practice-type-select");
+  const practiceCountSelect = document.getElementById("practice-count-select");
+  const btnNewPracticeSet = document.getElementById("btn-new-practice-set");
+  const btnRandomReview = document.getElementById("btn-random-review");
+  const btnCheckAll = document.getElementById("btn-check-all");
+  const btnScoreTryAgain = document.getElementById("btn-score-try-again");
+  const btnScoreReviewMistakes = document.getElementById("btn-score-review-mistakes");
+
+  // Restore saved preferences
+  if (practiceTypeSelect) {
+    practiceTypeSelect.value = practiceState.practiceType;
+    practiceTypeSelect.addEventListener("change", (e) => {
+      practiceState.practiceType = e.target.value;
+      localStorage.setItem("neon_practice_type", practiceState.practiceType);
+      generatePracticeSet();
+    });
+  }
+
+  if (practiceCountSelect) {
+    practiceCountSelect.value = practiceState.questionCount;
+    practiceCountSelect.addEventListener("change", (e) => {
+      practiceState.questionCount = e.target.value;
+      localStorage.setItem("neon_practice_count", practiceState.questionCount);
+      generatePracticeSet();
+    });
+  }
+
+  // View Navigation
+  if (navBtnExplore) {
+    navBtnExplore.addEventListener("click", () => switchView("explore"));
+  }
+  if (navBtnPractice) {
+    navBtnPractice.addEventListener("click", () => switchView("practice"));
+  }
+
+  // Set Controls
+  if (btnNewPracticeSet) {
+    btnNewPracticeSet.addEventListener("click", () => {
+      generatePracticeSet();
+      showToast("Generated a new practice set!");
+    });
+  }
+
+  if (btnRandomReview) {
+    btnRandomReview.addEventListener("click", () => {
+      // In Random Review, randomize selection and hidden field
+      practiceState.practiceType = "mixed";
+      if (practiceTypeSelect) practiceTypeSelect.value = "mixed";
+      localStorage.setItem("neon_practice_type", "mixed");
+      generatePracticeSet();
+      showToast("Random Review set generated!");
+    });
+  }
+
+  if (btnCheckAll) {
+    btnCheckAll.addEventListener("click", () => {
+      checkAllAnswers();
+    });
+  }
+
+  // Score Banner actions
+  if (btnScoreTryAgain) {
+    btnScoreTryAgain.addEventListener("click", () => {
+      generatePracticeSet();
+    });
+  }
+
+  if (btnScoreReviewMistakes) {
+    btnScoreReviewMistakes.addEventListener("click", () => {
+      if (practiceState.mistakeElements.length === 0) {
+        showToast("Perfect! No mistakes to review.");
+      } else {
+        const count = practiceState.mistakeElements.length;
+        generatePracticeSet(practiceState.mistakeElements);
+        showToast(`Reviewing ${count} mistake${count > 1 ? "s" : ""}!`);
+      }
+    });
+  }
+}
+
 
 // Boot up once DOM is loaded
 if (document.readyState === "loading") {

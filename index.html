@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Neon Elements - Interactive Periodic Table</title>
-    <meta name="description" content="Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, and category filters." />
+    <meta name="description" content="Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, category filters, and an interactive Fill-in-the-Blanks Practice Mode study tool." />
     <meta property="og:title" content="Neon Elements - Interactive Periodic Table" />
-    <meta property="og:description" content="Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, and category filters." />
+    <meta property="og:description" content="Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, category filters, and an interactive Fill-in-the-Blanks Practice Mode study tool." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="./style.css" />
@@ -29,6 +29,24 @@
             <span class="brand-subtitle">Interactive Periodic Table</span>
           </div>
         </div>
+
+        <!-- Site View Navigation: Periodic Table vs Practice Mode -->
+        <nav class="site-view-nav" aria-label="Main Views">
+          <button type="button" id="nav-btn-explore" class="view-nav-btn active" data-view="explore" aria-selected="true" title="Interactive Periodic Table View">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+            </svg>
+            <span>Periodic Table</span>
+          </button>
+          <button type="button" id="nav-btn-practice" class="view-nav-btn" data-view="practice" aria-selected="false" title="Practice Mode: Fill-in-the-blanks Quiz">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            <span>Practice Mode</span>
+          </button>
+        </nav>
 
         <!-- Center: Search Input Bar -->
         <div class="header-search-wrap">
@@ -334,6 +352,150 @@
         </div>
       </aside>
     </main>
+
+    <!-- =====================================================================
+         PRACTICE MODE WORKSPACE (Fill-in-the-blanks Periodic Table Reviewer)
+         ===================================================================== -->
+    <section id="practice-workspace" class="practice-workspace" hidden aria-label="Practice Mode: Chemistry Study Reviewer">
+      <!-- Practice Header Banner & Controls -->
+      <div class="practice-header-bar">
+        <div class="practice-title-wrap">
+          <div class="practice-tag-row">
+            <span class="practice-mode-tag">PRACTICE MODE</span>
+            <span class="practice-helper-tag">Fill-in-the-Blanks Study Tool</span>
+          </div>
+          <h1 class="practice-main-title">NEON ELEMENTS <span class="practice-title-accent">· Practice Mode</span></h1>
+          <p class="practice-subtitle">Test your knowledge of the periodic table with instant recall checking.</p>
+        </div>
+
+        <!-- Practice Mode Toolbar Controls -->
+        <div class="practice-toolbar">
+          <div class="practice-control-group">
+            <label for="practice-type-select" class="practice-control-label">Practice:</label>
+            <div class="select-wrapper">
+              <select id="practice-type-select" class="practice-select" aria-label="Choose what to practice">
+                <option value="mixed" selected>Mixed</option>
+                <option value="name">Element Names</option>
+                <option value="sym">Symbols</option>
+                <option value="num">Atomic Numbers</option>
+                <option value="mass">Atomic Masses</option>
+              </select>
+              <span class="select-arrow">▼</span>
+            </div>
+          </div>
+
+          <div class="practice-control-group">
+            <label for="practice-count-select" class="practice-control-label">Questions:</label>
+            <div class="select-wrapper">
+              <select id="practice-count-select" class="practice-select" aria-label="Choose question count">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="all">All Elements (118)</option>
+              </select>
+              <span class="select-arrow">▼</span>
+            </div>
+          </div>
+
+          <div class="practice-action-buttons">
+            <button type="button" id="btn-new-practice-set" class="btn-practice btn-action-new" title="Generate a fresh randomized set">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              <span>New Set</span>
+            </button>
+            <button type="button" id="btn-random-review" class="btn-practice btn-action-random" title="Randomize element selection and hidden fields">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 3 21 3 21 8"/>
+                <line x1="4" y1="20" x2="21" y2="3"/>
+                <polyline points="21 16 21 21 16 21"/>
+                <line x1="15" y1="15" x2="21" y2="21"/>
+              </svg>
+              <span>Random Review</span>
+            </button>
+            <button type="button" id="btn-check-all" class="btn-practice btn-action-checkall" title="Check all unanswered questions at once">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>Check All</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Stats & Progress Bar -->
+      <div class="practice-progress-card">
+        <div class="practice-stats-line">
+          <div class="stats-pills-row">
+            <div class="stat-badge stat-correct" title="Correct Answers">
+              <span class="stat-icon-dot dot-green"></span>
+              <span class="stat-name">Correct:</span>
+              <span id="stat-correct-count" class="stat-num">0</span>
+            </div>
+            <div class="stat-badge stat-wrong" title="Incorrect Answers">
+              <span class="stat-icon-dot dot-red"></span>
+              <span class="stat-name">Wrong:</span>
+              <span id="stat-wrong-count" class="stat-num">0</span>
+            </div>
+            <div class="stat-badge stat-remaining" title="Remaining Questions">
+              <span class="stat-icon-dot dot-gray"></span>
+              <span class="stat-name">Remaining:</span>
+              <span id="stat-remaining-count" class="stat-num">10</span>
+            </div>
+          </div>
+
+          <div class="progress-details-row">
+            <span id="practice-q-progress" class="q-progress-text">Question 0 / 10</span>
+            <span id="practice-pct-badge" class="pct-badge">0% Complete</span>
+          </div>
+        </div>
+
+        <div class="practice-progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="practice-progress-bar" class="practice-progress-bar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Completed Score Modal / Summary Banner -->
+      <div id="practice-score-banner" class="practice-score-banner" hidden>
+        <div class="score-banner-content">
+          <div class="score-trophy-symbol" aria-hidden="true">🎯</div>
+          <div class="score-text-block">
+            <div class="score-header-label">SET COMPLETED</div>
+            <div class="score-values-cluster">
+              <span class="score-caption">SCORE:</span>
+              <span id="final-score-points" class="final-score-digits">10 / 10</span>
+              <span id="final-score-pct" class="final-score-percentage">100%</span>
+            </div>
+            <p id="final-score-message" class="final-score-message">Excellent! 🔥</p>
+          </div>
+          <div class="score-buttons-group">
+            <button type="button" id="btn-score-try-again" class="btn-score-cta btn-try-again">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              <span>Try Again</span>
+            </button>
+            <button type="button" id="btn-score-review-mistakes" class="btn-score-cta btn-review-mistakes">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>Review Mistakes</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Practice Periodic Table Display Stage -->
+      <div class="practice-stage-container">
+        <div class="practice-scroll-wrapper" tabindex="0" role="region" aria-label="Practice Periodic Table Grid">
+          <div id="practice-table-grid" class="periodic-grid practice-grid"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Interactive Floating Tooltip -->
     <div id="element-tooltip" role="tooltip" aria-hidden="true">
