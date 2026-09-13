@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Elements - Interactive Periodic Table</title>
+    <meta name="description" content="Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, and category filters." />
+    <meta property="og:title" content="Neon Elements - Interactive Periodic Table" />
+    <meta property="og:description" content="Futuristic interactive periodic table with dark and light themes, detailed atomic data, interactive Bohr orbital models, real-time search, and category filters." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="theme-dark">
+    <!-- Futuristic Chemistry Website Header -->
+    <header class="site-header">
+      <div class="header-inner">
+        <!-- Brand Title & Subtitle -->
+        <div class="site-brand">
+          <div class="brand-atom-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+              <ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(30 12 12)"/>
+              <ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-30 12 12)"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">NEON <span class="brand-accent">ELEMENTS</span></span>
+            <span class="brand-subtitle">Interactive Periodic Table</span>
+          </div>
+        </div>
+
+        <!-- Center: Search Input Bar -->
+        <div class="header-search-wrap">
+          <div class="search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input 
+              type="search" 
+              id="search-input" 
+              placeholder="Search elements by name, symbol, or atomic number... (Ctrl+K or /)" 
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Search elements by name, symbol, or atomic number"
+            />
+            <div class="search-tools">
+              <span id="search-match-badge" class="search-badge">0 MATCHES</span>
+              <button id="search-clear-btn" class="search-clear-btn" title="Clear search" aria-label="Clear search">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Actions (Random, Theme Toggle, Guide) -->
+        <div class="header-controls">
+          <button id="random-element-btn" class="btn-header" title="Inspect a random element (Ctrl+R)" aria-label="Inspect random element">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 3 21 3 21 8"/>
+              <line x1="4" y1="20" x2="21" y2="3"/>
+              <polyline points="21 16 21 21 16 21"/>
+              <line x1="15" y1="15" x2="21" y2="21"/>
+              <line x1="4" y1="4" x2="9" y2="9"/>
+            </svg>
+            <span>Random</span>
+          </button>
+
+          <button id="theme-toggle-btn" class="btn-header btn-theme" title="Toggle Light / Dark Mode" aria-label="Toggle Theme">
+            <svg class="theme-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <span class="theme-label">Dark</span>
+          </button>
+
+          <button id="help-btn" class="btn-header" title="Periodic Table Guide & Keyboard Shortcuts" aria-label="Open Guide">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Guide</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sub-Control Bar: Scientific Metrics, State of Matter Filters & Category Rail -->
+    <nav class="sub-nav-bar" aria-label="Periodic table classification and filters">
+      <div class="sub-nav-top">
+        <!-- Table Scope Overview Badges -->
+        <div class="metrics-cluster" aria-label="Elemental Metrics">
+          <div class="metric-chip">
+            <span class="metric-value">118</span>
+            <span class="metric-label">Elements</span>
+          </div>
+          <div class="metric-chip">
+            <span class="metric-value">7</span>
+            <span class="metric-label">Periods</span>
+          </div>
+          <div class="metric-chip">
+            <span class="metric-value">18</span>
+            <span class="metric-label">Groups</span>
+          </div>
+          <div class="metric-chip">
+            <span class="metric-value">10</span>
+            <span class="metric-label">Series</span>
+          </div>
+        </div>
+
+        <!-- Filter by Standard State of Matter (STP) -->
+        <div class="state-filter-group" role="group" aria-label="Filter by standard state of matter">
+          <span class="filter-group-title">State (STP):</span>
+          <button class="state-filter-btn active" data-state-filter="all">All</button>
+          <button class="state-filter-btn" data-state-filter="solid">Solid</button>
+          <button class="state-filter-btn" data-state-filter="liquid">Liquid</button>
+          <button class="state-filter-btn" data-state-filter="gas">Gas</button>
+          <button class="state-filter-btn" data-state-filter="synthetic">Synthetic</button>
+        </div>
+
+        <!-- Reset Button -->
+        <button id="reset-view-btn" class="btn-reset" title="Clear active filters and reset table">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          <span>Reset</span>
+        </button>
+      </div>
+
+      <!-- Category Filter Tabs (Horizontal Scrollable Rail) -->
+      <div class="category-rail" role="tablist" aria-label="Element Categories">
+        <button class="cat-tab active" data-filter="all" role="tab" aria-selected="true">
+          <span class="cat-pip" style="background: var(--neon-cyan);"></span>
+          ALL ELEMENTS
+        </button>
+        <button class="cat-tab" data-filter="alkali" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-alkali);"></span>
+          ALKALI METALS
+        </button>
+        <button class="cat-tab" data-filter="alkaline" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-alkaline);"></span>
+          ALKALINE EARTH
+        </button>
+        <button class="cat-tab" data-filter="transition" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-transition);"></span>
+          TRANSITION METALS
+        </button>
+        <button class="cat-tab" data-filter="post-transition" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-post-transition);"></span>
+          POST-TRANSITION
+        </button>
+        <button class="cat-tab" data-filter="metalloid" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-metalloid);"></span>
+          METALLOIDS
+        </button>
+        <button class="cat-tab" data-filter="nonmetal" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-nonmetal);"></span>
+          NONMETALS
+        </button>
+        <button class="cat-tab" data-filter="halogen" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-halogen);"></span>
+          HALOGENS
+        </button>
+        <button class="cat-tab" data-filter="noble" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-noble);"></span>
+          NOBLE GASES
+        </button>
+        <button class="cat-tab" data-filter="lanthanide" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-lanthanide);"></span>
+          LANTHANIDES
+        </button>
+        <button class="cat-tab" data-filter="actinide" role="tab" aria-selected="false">
+          <span class="cat-pip" style="background: var(--cat-actinide);"></span>
+          ACTINIDES
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Workspace: Periodic Table Centerpiece + Scientific Element Data Card -->
+    <main class="science-workspace">
+      <!-- Periodic Table Stage -->
+      <section class="periodic-stage" aria-label="Interactive Periodic Table of Elements">
+        <div class="table-scroll-wrap">
+          <div id="periodic-table-grid" class="periodic-grid" role="grid" aria-label="Periodic Table 118 Elements">
+            <!-- Dynamically generated 118 elements and coordinates -->
+          </div>
+        </div>
+
+        <!-- Category Classification Interactive Legend -->
+        <div class="table-legend-card">
+          <div class="legend-header">
+            <span class="legend-title">IUPAC ELEMENT CLASSIFICATION</span>
+            <span class="legend-hint">CLICK ANY CATEGORY TO FILTER</span>
+          </div>
+          <div class="legend-pills-row">
+            <button class="legend-btn cat-alkali" data-cat="alkali"><span class="legend-dot" style="background: var(--cat-alkali);"></span>Alkali Metals</button>
+            <button class="legend-btn cat-alkaline" data-cat="alkaline"><span class="legend-dot" style="background: var(--cat-alkaline);"></span>Alkaline Earth</button>
+            <button class="legend-btn cat-transition" data-cat="transition"><span class="legend-dot" style="background: var(--cat-transition);"></span>Transition Metals</button>
+            <button class="legend-btn cat-post-transition" data-cat="post-transition"><span class="legend-dot" style="background: var(--cat-post-transition);"></span>Post-Transition</button>
+            <button class="legend-btn cat-metalloid" data-cat="metalloid"><span class="legend-dot" style="background: var(--cat-metalloid);"></span>Metalloids</button>
+            <button class="legend-btn cat-nonmetal" data-cat="nonmetal"><span class="legend-dot" style="background: var(--cat-nonmetal);"></span>Nonmetals</button>
+            <button class="legend-btn cat-halogen" data-cat="halogen"><span class="legend-dot" style="background: var(--cat-halogen);"></span>Halogens</button>
+            <button class="legend-btn cat-noble" data-cat="noble"><span class="legend-dot" style="background: var(--cat-noble);"></span>Noble Gases</button>
+            <button class="legend-btn cat-lanthanide" data-cat="lanthanide"><span class="legend-dot" style="background: var(--cat-lanthanide);"></span>Lanthanides</button>
+            <button class="legend-btn cat-actinide" data-cat="actinide"><span class="legend-dot" style="background: var(--cat-actinide);"></span>Actinides</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Scientific Element Information Card -->
+      <aside class="element-inspector-pane" aria-label="Element Information Panel">
+        <div class="inspector-card">
+          <!-- Card Top Navigation Bar -->
+          <div class="inspector-card-header">
+            <div class="element-order-badge" id="card-element-z">
+              <span class="badge-label">ELEMENT</span>
+              <span class="badge-num" id="card-header-num">#26</span>
+            </div>
+            <div class="card-stepper-group">
+              <button id="prev-element-btn" class="btn-stepper" title="Previous Element (Z - 1)" aria-label="Previous Element">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span>Prev</span>
+              </button>
+              <button id="next-element-btn" class="btn-stepper" title="Next Element (Z + 1)" aria-label="Next Element">
+                <span>Next</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Hero Element Card -->
+          <div id="element-hero-card" class="element-hero-card slow-rgb-glow cat-transition">
+            <div class="hero-main-block">
+              <div class="hero-top-info">
+                <span class="hero-z-tag">ATOMIC NO. <strong id="hero-atomic-num">26</strong></span>
+                <span id="hero-category-pill" class="hero-category-pill cat-transition">Transition Metal</span>
+              </div>
+              <div class="hero-symbol-row">
+                <span id="hero-symbol" class="hero-symbol-display">Fe</span>
+                <div class="hero-name-mass">
+                  <h2 id="hero-name" class="hero-element-name">Iron</h2>
+                  <span id="hero-atomic-mass" class="hero-mass-display">55.845 u</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Action: Copy Scientific Data -->
+            <div class="hero-action-bar">
+              <button id="btn-copy-json" class="btn-copy-data" title="Copy element properties to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span>Copy Data</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Bohr Atomic Orbital Simulator -->
+          <div class="bohr-simulator-card">
+            <div class="simulator-head">
+              <span class="sim-title">BOHR ELECTRON SHELL MODEL</span>
+              <span id="electron-shells-summary" class="sim-shells-badge">2 · 8 · 14 · 2</span>
+            </div>
+            <div class="simulator-canvas-wrap">
+              <canvas id="atom-canvas" width="170" height="170" aria-label="Interactive Bohr atomic orbital model"></canvas>
+            </div>
+          </div>
+
+          <!-- Scientific Constants & Physical Properties Grid -->
+          <div class="properties-section">
+            <div class="section-title-row">
+              <span class="section-title">ATOMIC & PHYSICAL PROPERTIES</span>
+            </div>
+            <div class="properties-grid">
+              <div class="property-box">
+                <span class="prop-key">Category</span>
+                <span id="prop-category" class="prop-val">Transition Metal</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Period · Group</span>
+                <span id="prop-period-group" class="prop-val">Period 4 · Group 8 (d-block)</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Standard State</span>
+                <span id="prop-state" class="prop-val">Solid</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Electronegativity</span>
+                <span id="prop-electronegativity" class="prop-val">1.83</span>
+              </div>
+              <div class="property-box span-2">
+                <span class="prop-key">Electron Configuration</span>
+                <span id="prop-electron-config" class="prop-val config-code">[Ar] 3d⁶ 4s²</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Melting Point</span>
+                <span id="prop-melting" class="prop-val">1811 K (1538 °C)</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Boiling Point</span>
+                <span id="prop-boiling" class="prop-val">3134 K (2862 °C)</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Density</span>
+                <span id="prop-density" class="prop-val">7.874 g/cm³</span>
+              </div>
+              <div class="property-box">
+                <span class="prop-key">Year Discovered</span>
+                <span id="prop-discovered" class="prop-val">Ancient</span>
+              </div>
+              <div class="property-box span-2">
+                <span class="prop-key">Discoverer</span>
+                <span id="prop-discoverer" class="prop-val">Known to antiquity</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scientific Overview & Description -->
+          <div class="overview-section">
+            <div class="section-title-row">
+              <span class="section-title">SCIENTIFIC OVERVIEW</span>
+            </div>
+            <div class="overview-box">
+              <p id="prop-description" class="overview-text">
+                The most common element on Earth by mass, forming much of Earth's outer and inner core, and the vital oxygen carrier in human hemoglobin.
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Interactive Floating Tooltip -->
+    <div id="element-tooltip" role="tooltip" aria-hidden="true">
+      <div class="tooltip-head">
+        <span id="tooltip-symbol" class="tooltip-symbol">Fe</span>
+        <span id="tooltip-num" class="tooltip-num">Z=26</span>
+      </div>
+      <div id="tooltip-name" class="tooltip-name">Iron</div>
+      <div id="tooltip-category" class="tooltip-category">Transition Metal</div>
+    </div>
+
+    <!-- Toast Notification (Floating bottom-right) -->
+    <div id="app-toast" role="status" aria-live="polite">
+      <span class="toast-dot"></span>
+      <span class="toast-text">Action completed</span>
+    </div>
+
+    <!-- Help / Guide Modal -->
+    <div id="help-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-guide-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div id="modal-guide-title" class="modal-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>NEON ELEMENTS · SCIENTIFIC USER GUIDE</span>
+          </div>
+          <button id="help-modal-close" class="modal-close-btn" aria-label="Close guide">✕</button>
+        </div>
+        <div class="modal-content">
+          <div class="guide-block">
+            <h3>KEYBOARD SHORTCUTS</h3>
+            <div class="shortcuts-grid">
+              <div class="shortcut-row">
+                <span>Focus search bar</span>
+                <div><kbd>Ctrl</kbd> + <kbd>K</kbd> or <kbd>/</kbd></div>
+              </div>
+              <div class="shortcut-row">
+                <span>Select first search match</span>
+                <kbd>Enter</kbd>
+              </div>
+              <div class="shortcut-row">
+                <span>Navigate table grid</span>
+                <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></div>
+              </div>
+              <div class="shortcut-row">
+                <span>Inspect focused element</span>
+                <div><kbd>Enter</kbd> or <kbd>Space</kbd></div>
+              </div>
+              <div class="shortcut-row">
+                <span>Inspect random element</span>
+                <div><kbd>Ctrl</kbd> + <kbd>R</kbd></div>
+              </div>
+              <div class="shortcut-row">
+                <span>Close modal / Clear search</span>
+                <kbd>Escape</kbd>
+              </div>
+            </div>
+          </div>
+
+          <div class="guide-block">
+            <h3>PERIODIC TABLE READING & METRICS</h3>
+            <p>
+              This interactive periodic table visualizes all <strong>118 recognized chemical elements</strong> according to IUPAC standards.
+              Each tile displays the atomic number (Z), state of matter dot indicator, element symbol, chemical name, and standard atomic mass.
+            </p>
+          </div>
+
+          <div class="guide-block">
+            <h3>BOHR ATOMIC ORBITAL SIMULATOR</h3>
+            <p>
+              The real-time simulator renders electron shells calculated from quantum orbital filling rules (K, L, M, N, O, P, Q) with dynamic particle velocities.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Scientific Website Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-dot"></span>
+          <span>NEON ELEMENTS · IUPAC Periodic Table of the 118 Chemical Elements</span>
+        </div>
+        <div class="footer-shortcuts">
+          <span class="shortcut-hint"><kbd>Ctrl+K</kbd> Search</span>
+          <span class="shortcut-hint"><kbd>←↑→↓</kbd> Navigate</span>
+          <span class="shortcut-hint"><kbd>Ctrl+R</kbd> Random</span>
+        </div>
+        <div class="footer-meta">
+          <span>Bohr Shell Simulator · Standard Atomic Weights</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Interactive Chemistry JavaScript -->
+    <script src="./script.js"></script>
+  </body>
+</html>
